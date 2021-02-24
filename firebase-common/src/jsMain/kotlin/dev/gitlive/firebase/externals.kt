@@ -18,6 +18,7 @@ external object firebase {
         fun functions(region: String? = definedExternally): functions.Functions
         fun database(url: String? = definedExternally): database.Database
         fun firestore(): firestore.Firestore
+        fun storage(): storage.Storage
     }
 
     interface Options {
@@ -458,5 +459,118 @@ external object firebase {
                 fun arrayUnion(vararg elements: Any): FieldValue
             }
         }
+    }
+
+    fun storage(): storage.Storage
+
+    object storage {
+
+        open class FirebaseStorageError {
+            val code: String
+            val message: String
+            val name: String
+            val serverResponse: String?
+            val stack: String
+        }
+
+        open class Reference {
+            val bucket: String
+            val fullName: String
+            val name: String
+            val parent: Reference
+            val root: Reference
+            val storage: Storage
+
+            fun child(path: String): Reference
+            fun delete(): Promise<Unit>
+            fun getDownloadUrl(): Promise<String>
+            fun getMetadata(): Promise<String>
+            fun list(options: ListOptions?): Promise<ListResult>
+            fun listAll(): Promise<ListResult>
+            fun put(data: Any, meta: UploadMetadata?): UploadTask
+            fun putString(data: String, meta: UploadMetadata?): UploadTask
+            fun updateMetadata(metadata: SettableMetadata): Promise<Unit>
+        }
+
+        open class Storage {
+            val app: firebase.App
+            val maxOperationRetryTime: Long
+            val maxUploadRetryTime: Long
+
+            fun ref(path: String? = definedExternally): Reference
+            fun refFromUrl(url: String = definedExternally): Reference
+            fun setMaxOperationRetryTime(time: Long): Unit
+            fun setMaxUploadRetryTime(time: Long): Unit
+        }
+
+        open class ListResult {
+            val items: Array<Reference>
+            val nextPageToken: String?
+            val prefixes: Array<Reference>
+        }
+
+        open class ListOptions {
+            val maxResults: Long?
+            val pageToken: Long?
+        }
+
+        open class UploadTask {
+            val snapshot: UploadTaskSnapshot
+
+            fun cancel(): Boolean
+            fun catch(onRejected: (error: Error) -> Unit? = definedExternally): Promise<Unit>
+            fun on(eventType: String, nextOrObserver: ((snapshot: UploadTaskSnapshot ) -> Unit)?, error: ((error: FirebaseStorageError ) -> Unit)?): (snapshot: UploadTaskSnapshot ) -> Unit
+            fun pause(): Boolean
+            fun resume(): Boolean
+            fun then(onFulfilled: ((snapshot: UploadTaskSnapshot ) -> Unit)?, error: ((error: FirebaseStorageError ) -> Unit)?): Promise<Unit>
+        }
+
+        open class UploadTaskSnapshot {
+            val bytesTransferred: Long
+            val downloadURL: String?
+            val metadata: FullMetadata
+            val ref: Reference
+            val state: String
+            val task: UploadTask
+            val totalBytes: Long
+        }
+
+        open class FullMetadata {
+            val bucket: String
+            val cacheControl: String?
+            val contentDisposition: String?
+            val contentEncoding: String?
+            val contentLanguage: String?
+            val contentType: String?
+            val customMetadata: Any?
+            val fullPath: String
+            val generation: String
+            val md5Hash: String?
+            val metageneration: String
+            val name: String
+            val size: Long
+            val timeCreated: String
+            val updated: String
+        }
+
+        open class UploadMetadata {
+            val cacheControl: String?
+            val contentDisposition: String?
+            val contentEncoding: String?
+            val contentLanguage: String?
+            val contentType: String?
+            val customMetadata: Any?
+            val md5Hash: String?
+        }
+
+        open class SettableMetadata {
+            val cacheControl: String?
+            val contentDisposition: String?
+            val contentEncoding: String?
+            val contentLanguage: String?
+            val contentType: String?
+            val customMetadata: Any?
+        }
+
     }
 }
