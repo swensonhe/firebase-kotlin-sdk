@@ -18,7 +18,7 @@ external object firebase {
         fun functions(region: String? = definedExternally): functions.Functions
         fun database(url: String? = definedExternally): database.Database
         fun firestore(): firestore.Firestore
-        fun storage(): storage.Storage
+        fun storage(url: String? = definedExternally): storage.Storage
     }
 
     interface Options {
@@ -461,7 +461,7 @@ external object firebase {
         }
     }
 
-    fun storage(): storage.Storage
+    fun storage(app: App? = definedExternally): storage.Storage
 
     object storage {
 
@@ -475,16 +475,16 @@ external object firebase {
 
         open class Reference {
             val bucket: String
-            val fullName: String
             val name: String
             val parent: Reference
+            val fullPath: String
             val root: Reference
             val storage: Storage
 
             fun child(path: String): Reference
             fun delete(): Promise<Unit>
             fun getDownloadUrl(): Promise<String>
-            fun getMetadata(): Promise<String>
+            fun getMetadata(): Promise<FullMetadata>
             fun list(options: ListOptions?): Promise<ListResult>
             fun listAll(): Promise<ListResult>
             fun put(data: Any, meta: UploadMetadata?): UploadTask
