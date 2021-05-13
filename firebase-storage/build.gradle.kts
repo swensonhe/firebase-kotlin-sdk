@@ -78,7 +78,7 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                api("com.google.firebase:firebase-storage:19.2.1")
+                api("com.google.firebase:firebase-storage:20.0.0")
                 implementation("com.android.support:multidex:1.0.3")
             }
         }
