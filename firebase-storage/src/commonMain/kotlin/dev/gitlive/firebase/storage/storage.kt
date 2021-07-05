@@ -76,7 +76,7 @@ expect class ListResult {
 
 
 expect class UploadTask {
-    expect class TaskSnapshot {
+    class TaskSnapshot {
         val bytesTransferred: Long
         val totalByteCount: Long
         val metadata: StorageMetadata

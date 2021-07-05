@@ -32,21 +32,21 @@ actual class StorageReference internal constructor(
 ) {
 
     actual val bucket: String
-        get() = rethrow { js.bucket }
+        get() = js.bucket
     actual val name: String
-        get() = rethrow { js.name }
+        get() = js.name
     actual val parent: StorageReference
-        get() = rethrow { StorageReference(js.parent) }
+        get() = StorageReference(js.parent)
     actual val path: String
-        get() = rethrow { js.fullPath}
+        get() = js.fullPath
     actual val root: StorageReference
-        get() = rethrow { StorageReference(js.root) }
+        get() = StorageReference(js.root)
     actual val storage: FirebaseStorage
-        get() = rethrow { FirebaseStorage(js.storage) }
+        get() = FirebaseStorage(js.storage)
 
-    actual fun child(path: String): StorageReference = rethrow { StorageReference(js.child(path)) }
+    actual fun child(path: String): StorageReference = StorageReference(js.child(path))
 
-    actual suspend fun delete(): Unit = rethrow { js.delete().await() }
+    actual suspend fun delete(): Unit = js.delete().await()
 
     actual suspend fun getDownloadUrl(): String = rethrow { js.getDownloadUrl().await() }
 
@@ -66,14 +66,16 @@ actual class DownloadTask {
 }
 
 
-actual class UploadTask {
+actual class UploadTask internal constructor(
+    val js: firebase.storage.UploadTask
+)  {
     class TaskSnapshot internal constructor(
-        val js: firebase.storage.UploadTask
+        private val snapshot: firebase.storage.UploadTaskSnapshot
     ) {
-        actual val bytesTransferred = js.snapshot.bytesTransferred
-        actual val totalByteCount = js.snapshot.totalBytes
-        actual val metadata = js.snapshot.metadata
-        actual val uploadSessionUri = js.snapshot.downloadURL
+        actual val bytesTransferred = snapshot.bytesTransferred
+        actual val totalByteCount = snapshot.totalBytes
+        actual val metadata = StorageMetadata(snapshot.metadata)
+        actual val uploadSessionUri = snapshot.downloadURL!!
     }
 }
 

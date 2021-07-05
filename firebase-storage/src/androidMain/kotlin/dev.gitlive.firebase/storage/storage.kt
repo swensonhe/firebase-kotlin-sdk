@@ -72,12 +72,12 @@ actual class UploadTask internal constructor(
     val uploadTask: com.google.firebase.storage.UploadTask
 ){
     actual class TaskSnapshot internal constructor(
-        val taskSnapshot: com.google.firebase.storage.UploadTask.TaskSnapshot
-    )
-        actual val bytesTransferred = uploadTask.snapshot.bytesTransferred
-        actual val totalByteCount = uploadTask.snapshot.totalByteCount
-        actual val metadata = StorageMetadata(uploadTask.snapshot.metadata!!)
-        actual val uploadSessionUri = uploadTask.snapshot.uploadSessionUri
+        private val taskSnapshot: com.google.firebase.storage.UploadTask.TaskSnapshot
+    ) {
+        actual val bytesTransferred = taskSnapshot.bytesTransferred
+        actual val totalByteCount = taskSnapshot.totalByteCount
+        actual val metadata = StorageMetadata(taskSnapshot.metadata!!)
+        actual val uploadSessionUri = taskSnapshot.uploadSessionUri.toString()
     }
 }
 
