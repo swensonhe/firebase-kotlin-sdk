@@ -521,7 +521,13 @@ external object firebase {
 
             fun cancel(): Boolean
             fun catch(onRejected: (error: Error) -> Unit? = definedExternally): Promise<Unit>
-            fun on(eventType: String, nextOrObserver: ((snapshot: UploadTaskSnapshot ) -> Unit)?, error: ((error: FirebaseStorageError ) -> Unit)?): (snapshot: UploadTaskSnapshot ) -> Unit
+            fun on(
+                eventType: String,
+                nextOrObserver: ((snapshot: UploadTaskSnapshot ) -> Unit)?,
+                error: ((error: FirebaseStorageError ) -> Unit)?,
+                complete: (() -> Unit)?
+            ): (snapshot: UploadTaskSnapshot ) -> Unit
+            fun off(eventType: String, listener: ((snapshot: UploadTaskSnapshot ) -> Unit)?): Unit
             fun pause(): Boolean
             fun resume(): Boolean
             fun then(onFulfilled: ((snapshot: UploadTaskSnapshot ) -> Unit)?, error: ((error: FirebaseStorageError ) -> Unit)?): Promise<Unit>

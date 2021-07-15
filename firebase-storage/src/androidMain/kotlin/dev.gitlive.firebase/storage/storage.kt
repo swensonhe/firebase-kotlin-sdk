@@ -61,7 +61,6 @@ actual class StorageReference internal constructor(
     actual suspend fun delete(): Unit = android.delete().await().run { Unit }
 
     actual suspend fun getDownloadUrl(): String = android.downloadUrl.await().run { Unit }
-
     actual suspend fun getMetadata(): StorageMetadata = StorageMetadata(android.getMetadata().await().run { Unit })
 
     actual suspend fun getBytes(maxDownloadSizeBytes: Long): DownloadBytesTask = DownloadBytesTask(android.getBytes(maxDownloadSizeBytes))

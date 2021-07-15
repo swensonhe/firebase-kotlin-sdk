@@ -1,22 +1,29 @@
 package dev.gitlive.firebase.storage
 
 import dev.gitlive.firebase.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.await
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+
 
 actual val Firebase.storage get() =
     rethrow { dev.gitlive.firebase.storage; FirebaseStorage(firebase.app().storage()) }
 
+
 actual fun Firebase.storage(url: String) =
     rethrow { dev.gitlive.firebase.storage; FirebaseStorage(firebase.app().storage(url)) }
+
 
 actual fun Firebase.storage(app: FirebaseApp) =
     rethrow { dev.gitlive.firebase.storage; FirebaseStorage(firebase.storage(app.js)) }
 
+
 actual fun Firebase.storage(app: FirebaseApp, url: String) =
     rethrow { dev.gitlive.firebase.storage; FirebaseStorage(app.js.storage(url)) }
 
-actual class FirebaseStorage(val js: firebase.storage.Storage) {
 
+actual class FirebaseStorage(val js: firebase.storage.Storage) {
     actual val maxOperationRetryTimeMillis = js.maxOperationRetryTime
     actual val maxUploadRetryTimeMillis = js.maxUploadRetryTime
 
@@ -30,7 +37,6 @@ actual class FirebaseStorage(val js: firebase.storage.Storage) {
 actual class StorageReference internal constructor(
     val js: firebase.storage.Reference
 ) {
-
     actual val bucket: String
         get() = js.bucket
     actual val name: String
@@ -49,50 +55,79 @@ actual class StorageReference internal constructor(
     actual suspend fun delete(): Unit = js.delete().await()
 
     actual suspend fun getDownloadUrl(): String = rethrow { js.getDownloadUrl().await() }
-
     actual suspend fun getMetadata(): StorageMetadata = rethrow { StorageMetadata(js.getMetadata().await()) }
 
-}
-
-
-// TODO: No download task for JS - download from URL
-actual class DownloadTask {
-//    class TaskSnapshot internal constructor(
-//        val js: firebase.storage.
-//    ) {
-//        actual val bytesTransferred = android.getBytesTransferred()
-//        actual val totalByteCount = android.getTotalByteCount()
-//    }
+//    actual suspend fun getBytes(maxDownloadSizeBytes: Long): DownloadBytesTask = DownloadBytesTask(js.put(maxDownloadSizeBytes))
+//    actual suspend fun getFile(destinationFile: Uri): DownloadFileTask = DownloadFileTask(js.put(destinationFile))
+    actual suspend fun putFile(data: Any): UploadTask = UploadTask(js.put(data as ByteArray, null))
 }
 
 
 actual class UploadTask internal constructor(
     val js: firebase.storage.UploadTask
-)  {
-    class TaskSnapshot internal constructor(
-        private val snapshot: firebase.storage.UploadTaskSnapshot
-    ) {
-        actual val bytesTransferred = snapshot.bytesTransferred
-        actual val totalByteCount = snapshot.totalBytes
-        actual val metadata = StorageMetadata(snapshot.metadata)
-        actual val uploadSessionUri = snapshot.downloadURL!!
+){
+    actual fun cancel() = js.cancel()
+    actual fun pause() = js.pause()
+    actual fun resume() = js.resume()
+
+    actual suspend fun onProgress() = callbackFlow<UploadTaskSnapshot> {
+        val listener = js.on("state_changed", { snapshot ->
+            if (snapshot.state == "running") {
+                safeOffer(UploadTaskSnapshot(snapshot))
+            }
+        }, { Unit })
+        awaitClose { rethrow { js.off("state_changed", listener) } }
+    }
+
+    actual suspend fun onPaused(): StorageMetadata {
+        val deferred = CompletableDeferred<Result<StorageMetadata>>()
+        val listener = js.on("state_changed", { snapshot ->
+            if (snapshot.state == "paused") {
+                deferred.complete(Result.success(StorageMetadata(snapshot.metadata)))
+            }
+        }, { Unit })
+        return deferred.await().getOrThrow()
+    }
+
+    actual suspend fun onFailed(): FirebaseStorageException {
+        val deferred = CompletableDeferred<Result<FirebaseStorageException>>()
+        val listener = js.on("state_changed", { Unit }, {
+            deferred.complete(Result.success(FirebaseStorageException(it)))
+        })
+        return deferred.await().getOrThrow()
+    }
+
+    actual suspend fun onComplete(): StorageMetadata {
+        val deferred = CompletableDeferred<Result<FirebaseStorageException>>()
+        val listener = js.on("state_changed", { Unit }, { Unit }, {
+            deferred.complete(Result.success(""))
+        })
+        return deferred.await().getOrThrow()
     }
 }
 
 
-actual class ListResult internal constructor(
-    val js: firebase.storage.ListResult
-){
-    actual val items = js.items.asList()
-    actual val pageToken = js.nextPageToken.toString()
-    actual val prefixes = js.prefixes.asList()
+// TODO: Might have to use ktor here?
+//actual class DownloadFileTaskSnapshot internal constructor(
+//    val js: firebase.storage.
+//) {
+//    actual fun getBytesTransferred() = android.bytesTransferred
+//    actual fun getTotalByteCount() = android.totalByteCount
+//}
+
+
+actual class UploadTaskSnapshot internal constructor(
+    val js: firebase.storage.UploadTaskSnapshot
+)  {
+    actual fun getBytesTransferred() = js.bytesTransferred
+    actual fun getTotalByteCount() = js.totalBytes
+    actual fun getMetadata() = StorageMetadata(js.metadata)
 }
 
 
 actual class StorageMetadata internal constructor(
     val js: firebase.storage.FullMetadata
 ) {
-
     val cacheControl = js.cacheControl
     val contentDisposition = js.contentDisposition
     val contentEncoding = js.contentEncoding
@@ -100,14 +135,15 @@ actual class StorageMetadata internal constructor(
     val contentType = js.contentType
     val customMetadata = js.customMetadata
     val md5Hash = js.md5Hash
-
 }
 
 
 actual class FirebaseStorageException(cause: Throwable, val code: StorageExceptionCode): FirebaseException(code.toString(), cause)
 
+
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 actual val FirebaseStorageException.code: StorageExceptionCode get() = code
+
 
 actual enum class StorageExceptionCode {
     UNKNOWN,
