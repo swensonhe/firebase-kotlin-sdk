@@ -3,32 +3,24 @@ package dev.gitlive.firebase.storage
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.FirebaseApp
 import dev.gitlive.firebase.FirebaseException
+import kotlinx.coroutines.flow.Flow
 
-/*
- Classes to complete:
-
- [X] - Storage (Kotlin, Objective-C, JS)
- [ ] - DownloadTask (Kotlin, Objective-C, JS)
- [ ] - ListResult (Kotlin, Objective-C, JS)
- [X] - Metadata (Kotlin, Objective-C, JS)
- [ ] - ObservableTask (Kotlin, Objective-C, JS)
- [X] - Reference (Kotlin, Objective-C, JS)
- [ ] - Task (Kotlin, Objective-C, JS)
- [ ] - TaskSnapshot (Kotlin, Objective-C, JS)
- [ ] - UploadTask (Kotlin, Objective-C, JS)
- */
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 expect val Firebase.storage: FirebaseStorage
 
+
 /** Returns the [FirebaseStorage] instance of a given [FirebaseApp]. */
 expect fun Firebase.storage(url: String): FirebaseStorage
+
 
 /** Returns the [FirebaseStorage] instance of a given [FirebaseApp]. */
 expect fun Firebase.storage(app: FirebaseApp): FirebaseStorage
 
+
 /** Returns the [FirebaseStorage] instance of a given [FirebaseApp]. */
 expect fun Firebase.storage(app: FirebaseApp, url: String): FirebaseStorage
+
 
 expect class FirebaseStorage {
     val maxOperationRetryTimeMillis: Long
@@ -54,34 +46,46 @@ expect class StorageReference {
     suspend fun getDownloadUrl(): String
     suspend fun getMetadata(): StorageMetadata
 
-//    suspend fun getFile(data: Any): DownloadTask
-
+    suspend fun getBytes(maxDownloadSizeBytes: Long): DownloadBytesTask
+    suspend fun getFile(destinationFile: Uri): DownloadFileTask
     suspend fun putFile(data: Any): UploadTask
 }
 
 
-//expect class DownloadTask {
-//    class TaskSnapshot {
-//        val bytesTransferred: Long
-//        val totalByteCount: Long
-//    }
-//}
+expect class DownloadBytesTask {
+    suspend fun onSuccess(): Any
+    suspend fun onFailed(): FirebaseStorageException
+}
 
 
-expect class ListResult {
-    val items: List<StorageReference>
-    val pageToken: String
-    val prefixes: List<StorageReference>
+expect class DownloadFileTask {
+    suspend fun onSuccess(): Any
+    suspend fun onFailed(): FirebaseStorageException
+}
+
+
+expect class DownloadFileTaskSnapshot {
+    fun getBytesTransferred(): Long
+    fun getTotalByteCount(): Long
 }
 
 
 expect class UploadTask {
-    class TaskSnapshot {
-        val bytesTransferred: Long
-        val totalByteCount: Long
-        val metadata: StorageMetadata
-        val uploadSessionUri: String
-    }
+    fun cancel(): Boolean
+    fun pause(): Boolean
+    fun resume(): Boolean
+
+    suspend fun onProgress(): Flow<UploadTaskSnapshot>
+    suspend fun onPaused(): StorageMetadata
+    suspend fun onFailed(): FirebaseStorageException
+    suspend fun onComplete(): StorageMetadata
+}
+
+
+expect class UploadTaskSnapshot {
+    fun getBytesTransferred(): Long
+    fun getTotalByteCount(): Long
+    fun getMetadata(): StorageMetadata
 }
 
 
@@ -96,10 +100,15 @@ expect class StorageMetadata {
 }
 
 
+expect class Uri
+
+
 expect class FirebaseStorageException: FirebaseException
+
 
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 expect val FirebaseStorageException.code: StorageExceptionCode
+
 
 expect enum class StorageExceptionCode {
     UNKNOWN,
