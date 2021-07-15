@@ -29,7 +29,8 @@ class FirebaseFirestoreTest {
                         apiKey = "AIzaSyCK87dcMFhzCz_kJVs2cT2AVlqOTLuyWV0",
                         databaseUrl = "https://fir-kotlin-sdk.firebaseio.com",
                         storageBucket = "fir-kotlin-sdk.appspot.com",
-                        projectId = "fir-kotlin-sdk"
+                        projectId = "fir-kotlin-sdk",
+                        gcmSenderId = "846484016111"
                     )
                 )
                 Firebase.firestore.useEmulator(emulatorHost, 8080)
@@ -39,9 +40,11 @@ class FirebaseFirestoreTest {
     @Test
     fun testStringOrderBy() = runTest {
         setupFirestoreData()
-
-        val resultDocs = Firebase.firestore.collection("FirebaseFirestoreTest")
-            .orderBy("prop1").get().documents
+        val resultDocs = Firebase.firestore
+            .collection("FirebaseFirestoreTest")
+            .orderBy("prop1")
+            .get()
+            .documents
         assertEquals(3, resultDocs.size)
         assertEquals("aaa", resultDocs[0].get("prop1"))
         assertEquals("bbb", resultDocs[1].get("prop1"))
@@ -119,6 +122,24 @@ class FirebaseFirestoreTest {
         assertNotEquals(FieldValue.serverTimestamp, doc.get().get("time"))
         assertNotEquals(FieldValue.serverTimestamp, doc.get().data(FirestoreTest.serializer()).time)
 
+    }
+
+
+    @Test
+    fun testDocumentAutoId() = runTest {
+        val doc = Firebase.firestore
+            .collection("testDocumentAutoId")
+            .document
+
+        doc.set(FirestoreTest.serializer(), FirestoreTest("AutoId"))
+
+        val resultDoc = Firebase.firestore
+            .collection("testDocumentAutoId")
+            .document(doc.id)
+            .get()
+
+        assertEquals(true, resultDoc.exists)
+        assertEquals("AutoId", resultDoc.get("prop1"))
     }
 
     private suspend fun setupFirestoreData() {

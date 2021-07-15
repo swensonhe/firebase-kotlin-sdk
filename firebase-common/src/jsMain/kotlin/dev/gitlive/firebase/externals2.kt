@@ -21,6 +21,9 @@ external object firestore
 @JsModule("firebase/storage")
 external object storage
 
+@JsModule("firebase/remote-config")
+external object remoteConfig
+
 typealias SnapshotCallback = (data: firebase.database.DataSnapshot, b: String?) -> Unit
 
 operator fun firebase.functions.HttpsCallable.invoke() = asDynamic()() as Promise<firebase.functions.HttpsCallableResult>

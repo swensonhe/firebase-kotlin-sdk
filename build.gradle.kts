@@ -1,32 +1,40 @@
-import de.undercouch.gradle.tasks.download.Download
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    kotlin("multiplatform") version "1.4.21" apply false
-    id("de.undercouch.download").version("4.1.1")
+    kotlin("multiplatform") version "1.5.10" apply false
     id("base")
 }
 
 buildscript {
     repositories {
-        jcenter()
         google()
+        mavenCentral()
         gradlePluginPortal()
         maven {
             url = uri("https://plugins.gradle.org/m2/")
         }
+        jcenter()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:4.1.1")
-        classpath("de.undercouch:gradle-download-task:4.1.1")
-        classpath("com.adarshr:gradle-test-logger-plugin:2.0.0")
+        classpath("com.android.tools.build:gradle:4.2.1")
+        classpath("com.adarshr:gradle-test-logger-plugin:2.1.1")
     }
 }
 
-val targetSdkVersion by extra(28)
+val targetSdkVersion by extra(30)
 val minSdkVersion by extra(16)
+
+// TODO: Hierarchical project structures are not fully supported in IDEA, enable only for a regular built (https://youtrack.jetbrains.com/issue/KT-35011)
+// add idea.active=true for local development
+val _ideaActive = gradleLocalProperties(rootDir)["idea.active"] == "true"
+
+//if (!_ideaActive) {
+//    ext["kotlin.mpp.enableGranularSourceSetsMetadata"] = "true"
+//    ext["kotlin.native.enableDependencyPropagation"] = "false"
+//}
 
 tasks {
     val updateVersions by registering {
@@ -37,29 +45,40 @@ tasks {
             "firebase-database:updateVersion", "firebase-database:updateDependencyVersion",
             "firebase-firestore:updateVersion", "firebase-firestore:updateDependencyVersion",
             "firebase-functions:updateVersion", "firebase-functions:updateDependencyVersion",
-            "firebase-storage:updateVersion", "firebase-storage:updateDependencyVersion"
+            "firebase-storage:updateVersion", "firebase-storage:updateDependencyVersion",
+            "firebase-config:updateVersion", "firebase-config:updateDependencyVersion"
         )
     }
 }
 
 subprojects {
 
+    val ideaActive by extra(_ideaActive)
+
     group = "dev.gitlive"
 
     apply(plugin="com.adarshr.test-logger")
-    
+
     repositories {
         mavenLocal()
-        mavenCentral()
         google()
+        mavenCentral()
         jcenter()
     }
-
 
     tasks.withType<Sign>().configureEach {
         onlyIf { !project.gradle.startParameter.taskNames.contains("publishToMavenLocal") }
     }
-    
+
+    tasks.whenTaskAdded {
+        enabled = when(name) {
+            "compileDebugUnitTestKotlinAndroid" -> false
+            "compileReleaseUnitTestKotlinAndroid" -> false
+            "testDebugUnitTest" -> false
+            "testReleaseUnitTest" -> false
+            else -> enabled
+        }
+    }
 
     tasks {
 
@@ -150,16 +169,18 @@ subprojects {
             }
         }
 
-        listOf("bootstrap", "update").forEach {
-            task<Exec>("carthage${it.capitalize()}") {
-                group = "carthage"
-                executable = "carthage"
-                args(
-                    it,
-                    "--project-directory", "src/iosMain/c_interop",
-                    "--platform", "iOS",
-                    "--cache-builds"
-                )
+        if (projectDir.resolve("src/nativeInterop/cinterop/Cartfile").exists()) { // skipping firebase-common module
+            listOf("bootstrap", "update").forEach {
+                task<Exec>("carthage${it.capitalize()}") {
+                    group = "carthage"
+                    executable = "carthage"
+                    args(
+                        it,
+                        "--project-directory", projectDir.resolve("src/nativeInterop/cinterop"),
+                        "--platform", "iOS",
+                        "--cache-builds"
+                    )
+                }
             }
         }
 
@@ -171,8 +192,10 @@ subprojects {
 
         create("carthageClean", Delete::class.java) {
             group = "carthage"
-            delete(File("$projectDir/src/iosMain/c_interop/Carthage"))
-            delete(File("$projectDir/src/iosMain/c_interop/Cartfile.resolved"))
+            delete(
+                projectDir.resolve("src/nativeInterop/cinterop/Carthage"),
+                projectDir.resolve("src/nativeInterop/cinterop/Cartfile.resolved")
+            )
         }
     }
 
@@ -188,15 +211,15 @@ subprojects {
 
         dependencies {
             "commonMainImplementation"(kotlin("stdlib-common"))
-            "commonMainImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+            "commonMainImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
             "jsMainImplementation"(kotlin("stdlib-js"))
-            "androidMainImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.4.2")
+            "androidMainImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.5.0")
             "commonTestImplementation"(kotlin("test-common"))
             "commonTestImplementation"(kotlin("test-annotations-common"))
-            "commonTestImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+            "commonTestImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
             "jsTestImplementation"(kotlin("test-js"))
             "androidAndroidTestImplementation"(kotlin("test-junit"))
-            "androidAndroidTestImplementation"("junit:junit:4.13")
+            "androidAndroidTestImplementation"("junit:junit:4.13.2")
             "androidAndroidTestImplementation"("androidx.test:core:1.3.0")
             "androidAndroidTestImplementation"("androidx.test.ext:junit:1.1.2")
             "androidAndroidTestImplementation"("androidx.test:runner:1.3.0")
@@ -255,11 +278,7 @@ subprojects {
                         comments.set("A business-friendly OSS license")
                     }
                 }
-
             }
         }
-
     }
-
 }
-

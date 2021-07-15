@@ -1,3 +1,12 @@
-include("firebase-common", "firebase-app", "firebase-firestore", "firebase-database", "firebase-auth", "firebase-functions", "firebase-storage")
+include(
+    "firebase-common",
+    "firebase-app",
+    "firebase-firestore",
+    "firebase-database",
+    "firebase-auth",
+    "firebase-functions",
+    "firebase-storage",
+    "firebase-config"
+)
 
-enableFeaturePreview("GRADLE_METADATA")
+//enableFeaturePreview("GRADLE_METADATA")
