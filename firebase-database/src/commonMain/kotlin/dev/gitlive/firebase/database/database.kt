@@ -78,14 +78,14 @@ expect class DataSnapshot {
     val key: String?
     inline fun <reified T> value(): T
     fun <T> value(strategy: DeserializationStrategy<T>): T
-    fun child(path: String): DataSnapshot
+    fun child(path: Integer): DataSnapshot
     val children: Iterable<DataSnapshot>
 }
 
 object ServerValue {
     val TIMESTAMP = Double.POSITIVE_INFINITY
 }
-
+// Add comment here
 expect class DatabaseException(message: String?, cause: Throwable?) : RuntimeException
 
 expect class OnDisconnect {
