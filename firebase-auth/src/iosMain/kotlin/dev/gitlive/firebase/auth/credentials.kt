@@ -76,17 +76,13 @@ actual class PhoneAuthProvider(val ios: FIRPhoneAuthProvider) {
 
     actual fun credential(verificationId: String, smsCode: String): PhoneAuthCredential = PhoneAuthCredential(ios.credentialWithVerificationID(verificationId, smsCode))
 
-    actual suspend fun verifyPhoneNumber(phoneNumber: String, verificationProvider: PhoneVerificationProvider): AuthCredential {
-        val verificationId: String = ios.awaitResult { ios.verifyPhoneNumber(phoneNumber, verificationProvider.delegate, it) }
-        val verificationCode = verificationProvider.getVerificationCode()
-        return credential(verificationId, verificationCode)
+    actual suspend fun verifyPhoneNumber(phoneNumber: String, verificationProvider: PhoneVerificationProvider): PhoneVerificationMetadata {
+        val verificationId: String = ios.awaitResult { ios.verifyPhoneNumber(phoneNumber, null, it) }
+        return PhoneVerificationMetadata(verificationId, phoneNumber)
     }
 }
 
-actual interface PhoneVerificationProvider {
-    val delegate: FIRAuthUIDelegateProtocol
-    suspend fun getVerificationCode(): String
-}
+actual interface PhoneVerificationProvider
 
 actual object TwitterAuthProvider {
     actual fun credential(token: String, secret: String): AuthCredential = AuthCredential(FIRTwitterAuthProvider.credentialWithToken(token, secret))

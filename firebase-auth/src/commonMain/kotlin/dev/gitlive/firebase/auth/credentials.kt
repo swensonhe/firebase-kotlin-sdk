@@ -43,7 +43,7 @@ expect class OAuthProvider constructor(
 
 expect class PhoneAuthProvider constructor(auth: FirebaseAuth = Firebase.auth) {
     fun credential(verificationId: String, smsCode: String): PhoneAuthCredential
-    suspend fun verifyPhoneNumber(phoneNumber: String, verificationProvider: PhoneVerificationProvider): AuthCredential
+    suspend fun verifyPhoneNumber(phoneNumber: String, verificationProvider: PhoneVerificationProvider): PhoneVerificationMetadata
 }
 
 expect interface PhoneVerificationProvider
@@ -51,3 +51,9 @@ expect interface PhoneVerificationProvider
 expect object TwitterAuthProvider {
     fun credential(token: String, secret: String): AuthCredential
 }
+
+
+data class PhoneVerificationMetadata(
+    val verificationId: String,
+    val phoneNumber: String
+)
