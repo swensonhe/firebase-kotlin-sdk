@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -194,11 +195,11 @@ subprojects {
     configure<PublishingExtension> {
 
         repositories {
-            maven {
-                url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+            maven("https://maven.pkg.github.com/swensonhe/firebase-kotlin-sdk") {
+                name = "Github"
                 credentials {
-                    username = project.findProperty("sonatypeUsername") as String? ?: System.getenv("sonatypeUsername")
-                    password = project.findProperty("sonatypePassword") as String? ?: System.getenv("sonatypePassword")
+                    username = gradleLocalProperties(rootDir).getProperty("githubRepoUser") as String
+                    password = gradleLocalProperties(rootDir).getProperty("githubRepoToken") as String
                 }
             }
         }
